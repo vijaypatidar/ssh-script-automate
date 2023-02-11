@@ -1,6 +1,5 @@
 package org.example;
 
-import java.util.regex.Pattern;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -15,8 +14,8 @@ public class Main {
 //        ssh.runAndBlock("sudo apt-get update");
 //        ssh.runAndBlock("sudo apt install npm");
         ssh.runAndBlock(String.format("mkdir %s && cd %s",requestInfo.getId(),requestInfo.getId()));
-        ssh.send("npm init");
-        ssh.expect(Pattern.compile(".*package name:.*"));
-        ssh.send("Testing");
+        String npmInit = ssh.run("npm init");
+        ssh.expect(npmInit);
+        ssh.close();
     }
 }

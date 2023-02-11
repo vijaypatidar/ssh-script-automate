@@ -13,6 +13,8 @@ public class Ssh {
     private final HostInfo host;
     private BufferedReader reader;
     private BufferedReader error;
+
+    private ChannelShell channel;
     private BufferedWriter writer;
 
     public Ssh(HostInfo host) {
@@ -25,7 +27,7 @@ public class Ssh {
         session.setConfig("StrictHostKeyChecking", "no");
         session.connect();
 
-        ChannelShell channel = (ChannelShell) session.openChannel("shell");
+        channel = (ChannelShell) session.openChannel("shell");
         channel.connect();
 
         InputStream in = channel.getInputStream();
@@ -36,7 +38,7 @@ public class Ssh {
         error = new BufferedReader(new InputStreamReader(err));
         new Thread(()->{
             String line;
-            while (true){
+            while (channel.isConnected()){
                 try {
                     if ((line = error.readLine()) == null) break;
                 } catch (IOException e) {
@@ -46,9 +48,9 @@ public class Ssh {
             }
         }).start();
         new Thread(()->{
-            String line;
+            
             Scanner scanner = new Scanner(System.in);
-            while (true){
+            while (channel.isConnected()){
                 try {
                     run(scanner.nextLine());
                 } catch (Exception e) {
@@ -76,7 +78,7 @@ public class Ssh {
     public void expect(String expect) throws Exception {
         String line;
         while ((line = reader.readLine()) != null) {
-            System.out.println(line);
+            log(line);
             if (expect.equals(line)) {
                 return;
             }
@@ -85,13 +87,23 @@ public class Ssh {
     public void expect(Pattern expect) throws Exception {
         String line;
         while ((line = reader.readLine()) != null) {
-            System.out.println(line);
+            log(line);
             if (expect.matcher(line).find()) {
                 return;
             }
         }
-        System.out.println("===================EXPECT COMPLETE=================");
+        log("===================EXPECT COMPLETE=================");
     }
 
+
+    public void close() {
+        if (channel!=null){
+            channel.disconnect();
+        }
+    }
+    
+    private void log(String log){
+        System.out.println(log);
+    }
 
 }
