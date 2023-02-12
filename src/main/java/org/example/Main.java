@@ -2,6 +2,7 @@ package org.example;
 
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.example.helpers.DiskHelper;
 
@@ -16,24 +17,11 @@ public class Main {
         SSHClient client = new SSHClient(detail);
         client.setup();
         String requestId = UUID.randomUUID().toString();
-        client.runAndBlock(String.format("mkdir %s && cd %s", requestId, requestId));
-        client.runAndBlock(String.format("mkdir test && cd test"));
-        String npmInit = client.run("npm init");
-        Thread.sleep(3000);
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.enter();
-        client.expect(npmInit);
-        client.expect(npmInit);
+        client.runAndBlock("wget --no-check-certificate -c --header \"Cookie: oraclelicense=accept-securebackup-cookie\" https://download.oracle.com/java/17/archive/jdk-17.0.1_linux-x64_bin.rpm");
+        String df = client.run(DiskHelper.getDiskSpaceCommand());
+        List<String> expect = client.expect(df);
+        Map<String, Double> availableDiskSpace = new DiskHelper().getAvailableDiskSpace(expect);
+
         client.close();
     }
 

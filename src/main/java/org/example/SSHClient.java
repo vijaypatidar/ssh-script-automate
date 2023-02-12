@@ -11,12 +11,12 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class SSHClient {
-    private final
-    AuthenticationDetail authenticationDetail;
+    private final AuthenticationDetail authenticationDetail;
     private BufferedReader reader;
     private BufferedReader error;
 
     private ChannelShell channel;
+    private Session session;
     private BufferedWriter writer;
 
     public SSHClient(AuthenticationDetail authenticationDetail) {
@@ -29,7 +29,7 @@ public class SSHClient {
             KeyPairAuthenticationDetail keyPairAuthenticationDetail = (KeyPairAuthenticationDetail) authenticationDetail;
             jSch.addIdentity(keyPairAuthenticationDetail.getKeyPairPath());
         }
-        Session session = jSch.getSession(authenticationDetail.getUsername(),
+        session = jSch.getSession(authenticationDetail.getUsername(),
                 authenticationDetail.getHostName(),
                 authenticationDetail.getPort()
         );
@@ -79,9 +79,9 @@ public class SSHClient {
     }
 
     public String run(String command) throws Exception {
-        String commandId = UUID.randomUUID().toString();
-        command += " && echo " + commandId;
-        writer.write(command + " \n");
+        String commandId = "STEP_" + UUID.randomUUID().toString().replace("-","");
+        command += " && echo " + commandId+" Complete";
+        writer.write(command + "\n");
         writer.flush();
         return commandId;
     }
@@ -123,8 +123,12 @@ public class SSHClient {
     }
 
     public void close() {
+
         if (channel != null) {
             channel.disconnect();
+        }
+        if (session != null) {
+            session.disconnect();
         }
     }
 
