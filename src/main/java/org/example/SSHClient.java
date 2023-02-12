@@ -8,22 +8,34 @@ import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-public class Ssh {
-    private Session session = null;
-    private final HostInfo host;
+public class SSHClient {
+    private final
+    AuthenticationDetail authenticationDetail;
     private BufferedReader reader;
     private BufferedReader error;
 
     private ChannelShell channel;
     private BufferedWriter writer;
 
-    public Ssh(HostInfo host) {
-        this.host = host;
+    public SSHClient(AuthenticationDetail authenticationDetail) {
+        this.authenticationDetail = authenticationDetail;
     }
 
     public void setup() throws Exception {
-        session = new JSch().getSession(host.getUsername(), host.getHost(), host.getPort());
-        session.setPassword(host.getPassword());
+        JSch jSch = new JSch();
+        if (authenticationDetail instanceof KeyPairAuthenticationDetail) {
+            KeyPairAuthenticationDetail keyPairAuthenticationDetail = (KeyPairAuthenticationDetail) authenticationDetail;
+            jSch.addIdentity(keyPairAuthenticationDetail.getKeyPairPath());
+        }
+        Session session = jSch.getSession(authenticationDetail.getUsername(),
+                authenticationDetail.getHostName(),
+                authenticationDetail.getPort()
+        );
+
+        if (authenticationDetail instanceof PasswordAuthenticationDetail) {
+            PasswordAuthenticationDetail passwordAuthenticationDetail = (PasswordAuthenticationDetail) authenticationDetail;
+            session.setPassword(passwordAuthenticationDetail.getPassword());
+        }
         session.setConfig("StrictHostKeyChecking", "no");
         session.connect();
 
@@ -36,9 +48,9 @@ public class Ssh {
         reader = new BufferedReader(new InputStreamReader(in));
         writer = new BufferedWriter(new OutputStreamWriter(out));
         error = new BufferedReader(new InputStreamReader(err));
-        new Thread(()->{
+        new Thread(() -> {
             String line;
-            while (channel.isConnected()){
+            while (channel.isConnected()) {
                 try {
                     if ((line = error.readLine()) == null) break;
                 } catch (IOException e) {
@@ -47,10 +59,10 @@ public class Ssh {
                 System.err.println(line);
             }
         }).start();
-        new Thread(()->{
-            
+        new Thread(() -> {
+
             Scanner scanner = new Scanner(System.in);
-            while (channel.isConnected()){
+            while (channel.isConnected()) {
                 try {
                     run(scanner.nextLine());
                 } catch (Exception e) {
@@ -63,6 +75,7 @@ public class Ssh {
     public void runAndBlock(String command) throws Exception {
         expect(run(command));
     }
+
     public String run(String command) throws Exception {
         String commandId = UUID.randomUUID().toString();
         command += " && echo " + commandId;
@@ -70,9 +83,15 @@ public class Ssh {
         writer.flush();
         return commandId;
     }
+
     public void send(String command) throws Exception {
-        writer.write(command + " \n");
+        writer.write(command + "\n");
         writer.flush();
+    }
+
+    public void enter() throws Exception {
+        send("");
+        sleep();
     }
 
     public void expect(String expect) throws Exception {
@@ -84,6 +103,7 @@ public class Ssh {
             }
         }
     }
+
     public void expect(Pattern expect) throws Exception {
         String line;
         while ((line = reader.readLine()) != null) {
@@ -95,15 +115,17 @@ public class Ssh {
         log("===================EXPECT COMPLETE=================");
     }
 
-
     public void close() {
-        if (channel!=null){
+        if (channel != null) {
             channel.disconnect();
         }
     }
-    
-    private void log(String log){
+
+    private void log(String log) {
         System.out.println(log);
     }
 
+    private void sleep() throws Exception {
+        Thread.sleep(1500);
+    }
 }
