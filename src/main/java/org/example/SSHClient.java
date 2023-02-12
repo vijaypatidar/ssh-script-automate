@@ -4,6 +4,8 @@ import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import java.io.*;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -94,25 +96,30 @@ public class SSHClient {
         sleep();
     }
 
-    public void expect(String expect) throws Exception {
+    public List<String> expect(String expect) throws Exception {
+        List<String> lines = new LinkedList<>();
         String line;
         while ((line = reader.readLine()) != null) {
             log(line);
             if (expect.equals(line)) {
-                return;
+                return lines;
             }
+            lines.add(line);
         }
+        return lines;
     }
 
-    public void expect(Pattern expect) throws Exception {
+    public List<String> expect(Pattern expect) throws Exception {
+        List<String> lines = new LinkedList<>();
         String line;
         while ((line = reader.readLine()) != null) {
             log(line);
             if (expect.matcher(line).find()) {
-                return;
+                return lines;
             }
+            lines.add(line);
         }
-        log("===================EXPECT COMPLETE=================");
+        return lines;
     }
 
     public void close() {

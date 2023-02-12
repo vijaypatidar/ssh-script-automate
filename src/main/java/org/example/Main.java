@@ -1,7 +1,9 @@
 package org.example;
 
 
+import java.util.List;
 import java.util.UUID;
+import org.example.helpers.DiskHelper;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -16,7 +18,7 @@ public class Main {
         String requestId = UUID.randomUUID().toString();
         client.runAndBlock(String.format("mkdir %s && cd %s", requestId, requestId));
         client.runAndBlock(String.format("mkdir test && cd test"));
-        client.send("npm init");
+        String npmInit = client.run("npm init");
         Thread.sleep(3000);
         client.enter();
         client.enter();
@@ -26,10 +28,12 @@ public class Main {
         client.enter();
         client.enter();
         client.enter();
-        client.send("Opensource");
         client.enter();
         client.enter();
-        client.expect("sasdsd");
+        client.enter();
+        client.enter();
+        client.expect(npmInit);
+        client.expect(npmInit);
         client.close();
     }
 
