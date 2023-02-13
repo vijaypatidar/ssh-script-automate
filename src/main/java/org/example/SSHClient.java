@@ -79,8 +79,8 @@ public class SSHClient {
     }
 
     public String run(String command) throws Exception {
-        String commandId = "STEP_" + UUID.randomUUID().toString().replace("-","");
-        command += " && echo " + commandId+" Complete";
+        String commandId = "STEP_" + UUID.randomUUID().toString().replace("-","")+"_Complete";
+        command += " && echo " + commandId;
         writer.write(command + "\n");
         writer.flush();
         return commandId;
