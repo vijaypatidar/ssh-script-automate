@@ -1,9 +1,10 @@
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
-group 'org.example'
-version '1.0-SNAPSHOT'
+group 'com.github.vijaypatidar'
+version '1.0.0'
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -15,14 +16,27 @@ repositories {
 }
 
 dependencies {
-//    implementation 'com.jcraft:jsch:0.1.55'
     implementation 'com.github.mwiede:jsch:0.2.7'
     compileOnly 'org.projectlombok:lombok:1.18.26'
     annotationProcessor 'org.projectlombok:lombok:1.18.26'
-
 }
 
 
 test {
     useJUnitPlatform()
 }
+//
+//publishing {
+//    publications {
+//
+//        repositories {
+//            maven {
+//                credentials {
+//                    username = System.getenv("USERNAME")
+//                    password = System.getenv("TOKEN")
+//                }
+//                url = uri("https://maven.pkg.github.com/vijaypatidar/boolean-algebra-core-common-lib")
+//            }
+//        }
+//    }
+//}

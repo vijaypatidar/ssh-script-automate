@@ -1,48 +1,31 @@
-package org.example;
+package com.github.vijaypatidar.ssh.automate;
 
 import com.jcraft.jsch.ChannelShell;
-import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
 import java.io.*;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class SSHClient implements Closeable{
-    private final AuthenticationDetail authenticationDetail;
+    private final SessionProvider sessionProvider;
     private BufferedReader reader;
     private BufferedReader error;
-
     private ChannelShell channel;
     private Session session;
-    private BufferedWriter writer;
+    private PrintStream printStream;
 
     private final ThreadGroup threadGroup = new ThreadGroup("SSHClient-" + UUID.randomUUID());
 
 
     public SSHClient(AuthenticationDetail authenticationDetail) {
-        this.authenticationDetail = authenticationDetail;
+        this.sessionProvider = new SessionProvider(authenticationDetail);
     }
 
     public void setup() throws Exception {
-        JSch jSch = new JSch();
-        if (authenticationDetail instanceof KeyPairAuthenticationDetail) {
-            KeyPairAuthenticationDetail keyPairAuthenticationDetail = (KeyPairAuthenticationDetail) authenticationDetail;
-            jSch.addIdentity(keyPairAuthenticationDetail.getKeyPairPath());
-        }
-        session = jSch.getSession(authenticationDetail.getUsername(),
-                authenticationDetail.getHostName(),
-                authenticationDetail.getPort()
-        );
-
-        if (authenticationDetail instanceof PasswordAuthenticationDetail) {
-            PasswordAuthenticationDetail passwordAuthenticationDetail = (PasswordAuthenticationDetail) authenticationDetail;
-            session.setPassword(passwordAuthenticationDetail.getPassword());
-        }
-        session.setConfig("StrictHostKeyChecking", "no");
+        session = sessionProvider.getSession();
         session.connect();
 
         channel = (ChannelShell) session.openChannel("shell");
@@ -69,7 +52,7 @@ public class SSHClient implements Closeable{
 
             }
         }).start();
-        writer = new BufferedWriter(new OutputStreamWriter(out));
+        printStream = new PrintStream(out);
         error = new BufferedReader(new InputStreamReader(err));
         new Thread(threadGroup, () -> {
             String line;
@@ -91,14 +74,14 @@ public class SSHClient implements Closeable{
     public String run(String command) throws Exception {
         String commandId = "STEP_" + UUID.randomUUID().toString().replace("-", "") + "_Complete";
         command += " && echo " + commandId;
-        writer.write(command + "\n");
-        writer.flush();
+        printStream.println(command);
+        printStream.flush();
         return commandId;
     }
 
     public void send(String command) throws Exception {
-        writer.write(command + "\n");
-        writer.flush();
+        printStream.println(command);
+        printStream.flush();
     }
 
     public void enter() throws Exception {

@@ -1,4 +1,4 @@
-package org.example.helpers;
+package com.github.vijaypatidar.ssh.automate.helpers;
 
 import java.util.HashMap;
 import java.util.List;

@@ -1,4 +1,4 @@
-package org.example;
+package com.github.vijaypatidar.ssh.automate;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

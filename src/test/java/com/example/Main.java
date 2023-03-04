@@ -1,12 +1,17 @@
-package org.example;
+package com.example;
 
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.example.helpers.DiskHelper;
+
+import com.github.vijaypatidar.ssh.automate.AuthenticationDetail;
+import com.github.vijaypatidar.ssh.automate.KeyPairAuthenticationDetail;
+import com.github.vijaypatidar.ssh.automate.SSHClient;
+import com.github.vijaypatidar.ssh.automate.helpers.DiskHelper;
 
 public class Main {
+
     public static void main(String[] args) throws Exception {
         AuthenticationDetail detail = new KeyPairAuthenticationDetail(
                 "13.126.186.91",
