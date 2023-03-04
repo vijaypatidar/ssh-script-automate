@@ -21,7 +21,7 @@ public class Main {
         String df = client.run(DiskHelper.getDiskSpaceCommand());
         List<String> expect = client.expect(df);
         Map<String, Double> availableDiskSpace = new DiskHelper().getAvailableDiskSpace(expect);
-        client.run("exit");
+
         client.close();
     }
 
