@@ -9,7 +9,7 @@ import org.example.helpers.DiskHelper;
 public class Main {
     public static void main(String[] args) throws Exception {
         AuthenticationDetail detail = new KeyPairAuthenticationDetail(
-                "3.111.219.95",
+                "13.126.186.91",
                 "ubuntu",
                 22,
                 "aws-ssh.pem"
@@ -21,7 +21,7 @@ public class Main {
         String df = client.run(DiskHelper.getDiskSpaceCommand());
         List<String> expect = client.expect(df);
         Map<String, Double> availableDiskSpace = new DiskHelper().getAvailableDiskSpace(expect);
-
+        client.run("exit");
         client.close();
     }
 

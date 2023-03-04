@@ -3,6 +3,7 @@ package org.example;
 import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+
 import java.io.*;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-public class SSHClient {
+public class SSHClient implements Closeable{
     private final AuthenticationDetail authenticationDetail;
     private BufferedReader reader;
     private BufferedReader error;
@@ -18,6 +19,9 @@ public class SSHClient {
     private ChannelShell channel;
     private Session session;
     private BufferedWriter writer;
+
+    private final ThreadGroup threadGroup = new ThreadGroup("SSHClient-" + UUID.randomUUID());
+
 
     public SSHClient(AuthenticationDetail authenticationDetail) {
         this.authenticationDetail = authenticationDetail;
@@ -47,29 +51,35 @@ public class SSHClient {
         InputStream in = channel.getInputStream();
         InputStream err = channel.getExtInputStream();
         OutputStream out = channel.getOutputStream();
-        reader = new BufferedReader(new InputStreamReader(in));
+
+        PipedInputStream pi = new PipedInputStream();
+        PipedOutputStream po = new PipedOutputStream(pi);
+        reader = new BufferedReader(new InputStreamReader(pi));
+        new Thread(threadGroup, () -> {
+            int read = 0;
+            byte[] bytes = new byte[1024];
+            try {
+                while (!Thread.interrupted()&&(read = in.read(bytes)) > 0) {
+                    po.write(bytes, 0, read);
+                    System.out.print(new String(bytes, 0, read));
+                }
+                pi.close();
+                po.close();
+            } catch (Exception e) {
+
+            }
+        }).start();
         writer = new BufferedWriter(new OutputStreamWriter(out));
         error = new BufferedReader(new InputStreamReader(err));
-        new Thread(() -> {
+        new Thread(threadGroup, () -> {
             String line;
-            while (channel.isConnected()) {
+            while (!Thread.interrupted()&&channel.isConnected()) {
                 try {
                     if ((line = error.readLine()) == null) break;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
                 System.err.println(line);
-            }
-        }).start();
-        new Thread(() -> {
-
-            Scanner scanner = new Scanner(System.in);
-            while (channel.isConnected()) {
-                try {
-                    run(scanner.nextLine());
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
             }
         }).start();
     }
@@ -79,7 +89,7 @@ public class SSHClient {
     }
 
     public String run(String command) throws Exception {
-        String commandId = "STEP_" + UUID.randomUUID().toString().replace("-","")+"_Complete";
+        String commandId = "STEP_" + UUID.randomUUID().toString().replace("-", "") + "_Complete";
         command += " && echo " + commandId;
         writer.write(command + "\n");
         writer.flush();
@@ -97,23 +107,13 @@ public class SSHClient {
     }
 
     public List<String> expect(String expect) throws Exception {
-        List<String> lines = new LinkedList<>();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            log(line);
-            if (expect.equals(line)) {
-                return lines;
-            }
-            lines.add(line);
-        }
-        return lines;
+        return expect(Pattern.compile("^" + Pattern.quote(expect) + "$"));
     }
 
     public List<String> expect(Pattern expect) throws Exception {
         List<String> lines = new LinkedList<>();
         String line;
         while ((line = reader.readLine()) != null) {
-            log(line);
             if (expect.matcher(line).find()) {
                 return lines;
             }
@@ -122,18 +122,15 @@ public class SSHClient {
         return lines;
     }
 
+    @Override
     public void close() {
-
         if (channel != null) {
             channel.disconnect();
         }
         if (session != null) {
             session.disconnect();
         }
-    }
-
-    private void log(String log) {
-        System.out.println(log);
+        threadGroup.interrupt();
     }
 
     private void sleep() throws Exception {
