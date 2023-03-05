@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-public class SSHClient implements Closeable{
+public class SSHClient implements Closeable {
     private final SessionProvider sessionProvider;
     private BufferedReader reader;
     private BufferedReader error;
@@ -42,7 +42,7 @@ public class SSHClient implements Closeable{
             int read = 0;
             byte[] bytes = new byte[1024];
             try {
-                while (!Thread.interrupted()&&(read = in.read(bytes)) > 0) {
+                while (!Thread.interrupted() && (read = in.read(bytes)) > 0) {
                     po.write(bytes, 0, read);
                     System.out.print(new String(bytes, 0, read));
                 }
@@ -56,7 +56,7 @@ public class SSHClient implements Closeable{
         error = new BufferedReader(new InputStreamReader(err));
         new Thread(threadGroup, () -> {
             String line;
-            while (!Thread.interrupted()&&channel.isConnected()) {
+            while (!Thread.interrupted() && channel.isConnected()) {
                 try {
                     if ((line = error.readLine()) == null) break;
                 } catch (IOException e) {
@@ -93,14 +93,28 @@ public class SSHClient implements Closeable{
         return expect(Pattern.compile("^" + Pattern.quote(expect) + "$"));
     }
 
+    char[] chars = new char[1024];
+
     public List<String> expect(Pattern expect) throws Exception {
         List<String> lines = new LinkedList<>();
-        String line;
-        while ((line = reader.readLine()) != null) {
+        String line = "";
+        int read = 0;
+        while ((read = reader.read(chars)) > 0) {
+            for (int i=0;i<read;i++) {
+                char ch = chars[i];
+                if (ch == '\n' || ch == '\r') {
+                    lines.add(line);
+                    if (expect.matcher(line).find()) {
+                        return lines;
+                    }
+                    line = "";
+                } else {
+                    line += ch;
+                }
+            }
             if (expect.matcher(line).find()) {
                 return lines;
             }
-            lines.add(line);
         }
         return lines;
     }
