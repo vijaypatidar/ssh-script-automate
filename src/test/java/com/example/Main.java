@@ -25,10 +25,10 @@ public class Main {
         String requestId = UUID.randomUUID().toString();
         client.runAndBlock("curl -fsSL https://deb.nodesource.com/setup_19.x | sudo -E bash -");
         client.runAndBlock("sudo apt-get install -y nodejs");
-        client.runAndBlock("mkdir demo && cd demo");
+        client.runAndBlock("mkdir demo2 && cd demo2");
         String init = client.run("npm init");
         client.expect(Pattern.compile("package name:.*"));
-        client.send("vijay");
+        client.send("demo-ssh-automate");
         client.expect(Pattern.compile("version:.*"));
         client.send("1.3.5");
         client.expect(Pattern.compile("description:.*"));
@@ -39,7 +39,7 @@ public class Main {
         client.enter();
         client.enter();
         client.enter();
-        client.enter();
+        client.send("Vijay Patidar");
         client.enter();
         client.enter();
         client.expect(init);
