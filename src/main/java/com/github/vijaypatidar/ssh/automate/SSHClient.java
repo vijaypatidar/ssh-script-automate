@@ -92,6 +92,9 @@ public class SSHClient implements Closeable {
     public List<String> expect(String expect) throws Exception {
         return expect(Pattern.compile("^" + Pattern.quote(expect) + "$"));
     }
+    public List<String> expectPrompt(String expect) throws Exception {
+        return expect(Pattern.compile(Pattern.quote(expect) + ".*"));
+    }
 
     char[] chars = new char[1024];
 
